@@ -1,6 +1,6 @@
 package dojo
 
-object DeepThought {
+object BowlingGame {
 
   def compute(question: AnyVal): Int = {
     42

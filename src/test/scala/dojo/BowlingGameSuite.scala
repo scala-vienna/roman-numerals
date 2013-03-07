@@ -4,7 +4,7 @@ import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
-import dojo.DeepThought._
+import dojo.BowlingGame._
 
 @RunWith(classOf[JUnitRunner])
 class DeepThoughtSuite extends FunSuite {
