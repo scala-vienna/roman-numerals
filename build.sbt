@@ -1,4 +1,4 @@
-name := "dojo-quickstart"
+name := "bowling"
 
 version := "0.1.0"
  
