@@ -28,6 +28,15 @@ class RomanNumeralsSuite extends FunSuite {
   test("5") {
     assert(roman(5) === "V")
   }
+  test("6") {
+    assert(roman(6) === "VI")
+  }
+  test("7") {
+    assert(roman(7) === "VII")
+  }
+  test("8") {
+    assert(roman(8) === "VIII")
+  }
 
 
 }
