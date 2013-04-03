@@ -52,9 +52,9 @@ class RomanNumeralsSuite extends FunSuite {
     assert(roman(49) === "XLIX")
   }
 
-//  test("121") {
-//    assert(roman(121) === "CXXI")
-//  }
+  test("121") {
+    assert(roman(121) === "CXXI")
+  }
 
 
 }

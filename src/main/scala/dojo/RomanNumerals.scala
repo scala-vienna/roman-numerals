@@ -11,7 +11,9 @@ object RomanNumerals {
 
   def roman(number: Int): String = {
     val hundreds = number/100
-    roman1(hundreds, 2) + roman1((number - hundreds) / 10, 1) + roman1(number%10, 0)
+    val tens = (number - hundreds*100)/10
+    val units = number % 10
+    roman1(hundreds, 2) + roman1(tens, 1) + roman1(units, 0)
   }
   def roman1(number: Int, pos: Int) = {
     number match {
