@@ -7,18 +7,19 @@ import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class RomanNumeralsSuite extends FunSuite {
+
   import RomanNumerals._
-  
-  test("1") {
-    assert(roman(1) === "I")
-  }
 
-  test("2") {
-    assert(roman(2) === "II")
-  }
+  val list = List((1, "I"),
+    (2, "II"),
+    (3,"III")
 
-  test("3") {
-    assert(roman(3) === "III")
+  )
+
+  for ((k, v) <- list) {
+    test(k.toString) {
+      assert(roman(k) === v)
+    }
   }
 
   test("4") {
@@ -36,6 +37,15 @@ class RomanNumeralsSuite extends FunSuite {
   }
   test("8") {
     assert(roman(8) === "VIII")
+  }
+  test("9") {
+    assert(roman(9) === "IX")
+  }
+  test("10") {
+    assert(roman(10) === "X")
+  }
+  test("11") {
+    assert(roman(11) === "XI")
   }
 
 
