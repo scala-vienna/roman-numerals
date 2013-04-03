@@ -10,8 +10,7 @@ object RomanNumerals {
       case 2 => "II"
       case 3 => "III"
       case 4 => "IV"
-      case 5 => "V"
-
+      case n if (n%5==0) => "V"
       case _ => throw new RuntimeException
     }
   }
