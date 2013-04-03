@@ -1,4 +1,4 @@
-name := "bowling"
+name := "roman-numerals"
 
 version := "0.1.0"
  
