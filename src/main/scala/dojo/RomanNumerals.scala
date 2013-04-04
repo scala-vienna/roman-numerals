@@ -1,35 +1,119 @@
 package dojo
 
+import akka.actor.{ActorRef, Props, ActorSystem, Actor}
+import akka.pattern.ask
+import java.net.URL
+import java.io.{File, InputStream}
+import io.Source
+import akka.routing.RoundRobinRouter
+import collection.mutable
+import akka.util.Timeout
+import scala.concurrent.duration._
+import concurrent.Await
+
 object RomanNumerals {
 
-  val c = List(
-    Map(0 -> "I", 1 -> "V", 2 -> "X"),
-    Map(0 -> "X", 1 -> "L", 2 -> "C"),
-    Map(0 -> "C", 1 -> "D", 2 -> "M"),
-    Map(0 -> "M", 1 -> "?", 2 -> "??")
-  )
-
+  private val system = ActorSystem()
 
   def roman(number: Int): String = {
-    val thousands = number/1000
-    val hundreds = (number - thousands*1000)/100
-    val tens = (number - hundreds*100 - thousands*1000)/10
-    val units = number % 10
-    roman1(thousands, 3) + roman1(hundreds, 2) + roman1(tens, 1) + roman1(units, 0)
-  }
-  def roman1(number: Int, pos: Int) = {
-    number match {
-      case n if n <= 3 => c(pos)(0) * n
-      case 4 => c(pos)(0) + c(pos)(1)
-      case 9 => c(pos)(0) + c(pos)(2)
-      case 10 => c(pos)(2)
-      case n  if n > 10  => c(pos)(2) + c(pos)(0)
+    val reference = new File(System.getProperty("java.io.tmpdir") + File.separator + "romanNumerals.txt")
 
+    val numerals: Map[Int, String] = if (reference.exists() && reference.isFile) {
+      val cached = Source.fromFile(reference).getLines() map {
+        line => {
+          val Array(arabic: String, roman: String) = line.split("=")
+          (arabic.toInt, roman)
+        }
+      }
+      cached.toMap
+    } else {
+      val downloader = system.actorOf(Props[RomanNumeralDownloader])
+      implicit val timeout = new Timeout(5 minutes)
+      val promise = (downloader ? Download)
+      val result = Await.result(promise, 5 minutes).asInstanceOf[Map[Int, String]]
 
-      case n if n >= 5 => c(pos)(1) + c(pos)(0) * (n-5)
-      case _ => throw new RuntimeException
+      reference.createNewFile()
+
+      printToFile(reference) { p =>
+        for (pair <- result) {
+          p.println(pair._1 + "=" + pair._2)
+        }
+      }
+
+      result
     }
 
+    numerals.get(number).getOrElse("Unknown")
+  }
+
+  private def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {
+    val p = new java.io.PrintWriter(f)
+    try { op(p) } finally { p.close() }
+  }
+}
+
+class RomanNumeralDownloader extends Actor {
+
+  private val howMany = 3000
+
+  private val reference = mutable.HashMap[Int, String]()
+
+  private var start: Long = 0
+
+  private var client: ActorRef = null
+
+  def receive = {
+
+    case Download =>
+      start = System.currentTimeMillis()
+      val fetchers = Props[RomanNumeralFetcher].withRouter(RoundRobinRouter(10))
+      val fetchersRef = context.actorOf(fetchers)
+
+      for (i <- 1 to howMany) {
+        fetchersRef ! i
+      }
+
+      client = sender
+
+    case RomanNumeral(arabic, result) =>
+      result map { roman =>
+        reference put (arabic, roman)
+      } getOrElse {
+        println(s"Ooops, can't get the roman version of $arabic")
+      }
+
+      if (reference.size % 50 == 0) {
+        println(s"Fetched ${reference.size} numerals so far")
+      }
+
+      if (reference.size == howMany) {
+        println(s"Done downloading all roman numerals from 1 to $howMany in ${System.currentTimeMillis() - start} ms")
+        client ! reference.toMap
+      }
 
   }
+
+
+
+}
+
+case object Download
+case class RomanNumeral(arabic: Int, result: Option[String])
+
+class RomanNumeralFetcher extends Actor {
+
+  def receive = {
+    case n if n.isInstanceOf[Int] =>
+      val contentStream = new URL(s"http://www.miniwebtool.com/roman-numerals-converter/?number=$n").getContent.asInstanceOf[InputStream]
+      val content = Source.fromInputStream(contentStream).getLines().mkString("\n")
+      val result = extractResult(content)
+      sender ! RomanNumeral(n.asInstanceOf[Int], result)
+  }
+
+  private def extractResult(content: String): Option[String] = {
+    val resultPattern = """Roman Number</td><td>(.*?)</td>""".r
+    val maybeMatch = resultPattern.findFirstMatchIn(content)
+    maybeMatch.map(_.group(1))
+  }
+
 }

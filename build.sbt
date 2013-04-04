@@ -10,6 +10,7 @@ EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
 EclipseKeys.withSource := true
   
 libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-actor" % "2.1.2",
   "junit" % "junit" % "4.10" % "test",
   "org.scalatest" %% "scalatest" % "1.9.1" % "test->default"
 )
